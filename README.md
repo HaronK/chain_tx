@@ -6,12 +6,7 @@ Assumptions:
 
 ## Completeness
 
-> Do you handle all of the cases, including disputes, resolutions, and
-> chargebacks? Maybe you don't handle disputes and resolutions but you
-> can tell when a transaction is charged back. Try to cover as much as you
-> can
-
-Most major cases are covered.
+All cases are covered.
 
 ## Correctness
 
