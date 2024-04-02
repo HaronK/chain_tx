@@ -72,7 +72,9 @@ mod tests {
     #[test]
     fn test_withdraw() {
         do_test(
-            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5",
+            r##"
+                deposit, 1, 1, 1.0
+                withdrawal, 1, 2, 0.5"##,
             &[(1, 0.5, 0.0, 0.5, false)],
         );
     }
@@ -80,13 +82,20 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_withdraw_too_much_fail() {
-        do_test("deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 1.5", &[]);
+        do_test(
+            r##"
+                deposit, 1, 1, 1.0
+                withdrawal, 1, 2, 1.5"##,
+            &[],
+        );
     }
 
     #[test]
     fn test_dispute_deposit() {
         do_test(
-            "deposit, 1, 1, 1.0\ndispute, 1, 1, 0.0",
+            r##"
+                deposit, 1, 1, 1.0
+                dispute, 1, 1, 0.0"##,
             &[(1, 0.0, 1.0, 1.0, false)],
         );
     }
@@ -94,7 +103,10 @@ mod tests {
     #[test]
     fn test_resolve_deposit() {
         do_test(
-            "deposit, 1, 1, 1.0\ndispute, 1, 1, 0.0\nresolve, 1, 1, 0.0",
+            r##"
+                deposit, 1, 1, 1.0
+                dispute, 1, 1, 0.0
+                resolve, 1, 1, 0.0"##,
             &[(1, 1.0, 0.0, 1.0, false)],
         );
     }
@@ -102,7 +114,10 @@ mod tests {
     #[test]
     fn test_chargeback_deposit() {
         do_test(
-            "deposit, 1, 1, 1.0\ndispute, 1, 1, 0.0\nchargeback, 1, 1, 0.0",
+            r##"
+                deposit, 1, 1, 1.0
+                dispute, 1, 1, 0.0
+                chargeback, 1, 1, 0.0"##,
             &[(1, 0.0, 0.0, 0.0, true)],
         );
     }
@@ -110,7 +125,10 @@ mod tests {
     #[test]
     fn test_dispute_withdraw() {
         do_test(
-            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5\ndispute, 1, 2, 0.0",
+            r##"
+                deposit, 1, 1, 1.0
+                withdrawal, 1, 2, 0.5
+                dispute, 1, 2, 0.0"##,
             &[(1, 1.0, -0.5, 0.5, false)],
         );
     }
@@ -118,7 +136,11 @@ mod tests {
     #[test]
     fn test_resolve_withdraw() {
         do_test(
-            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5\ndispute, 1, 2, 0.0\nresolve, 1, 2, 0.0",
+            r##"
+                deposit, 1, 1, 1.0
+                withdrawal, 1, 2, 0.5
+                dispute, 1, 2, 0.0
+                resolve, 1, 2, 0.0"##,
             &[(1, 0.5, 0.0, 0.5, false)],
         );
     }
@@ -126,7 +148,11 @@ mod tests {
     #[test]
     fn test_chargeback_withdraw() {
         do_test(
-            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5\ndispute, 1, 2, 0.0\nchargeback, 1, 2, 0.0",
+            r##"
+                deposit, 1, 1, 1.0
+                withdrawal, 1, 2, 0.5
+                dispute, 1, 2, 0.0
+                chargeback, 1, 2, 0.0"##,
             &[(1, 1.0, 0.0, 1.0, true)],
         );
     }
