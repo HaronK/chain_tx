@@ -39,6 +39,7 @@ impl ClientData {
     }
 
     pub fn deposit(&mut self, id: TransactionId, amount: Amount) -> Result<()> {
+        ensure!(!self.locked, "Account is locked");
         ensure!(
             !self.transactions.contains_key(&id),
             "Duplicate transaction id"
@@ -53,6 +54,7 @@ impl ClientData {
     }
 
     pub fn withdraw(&mut self, id: TransactionId, amount: Amount) -> Result<()> {
+        ensure!(!self.locked, "Account is locked");
         ensure!(
             !self.transactions.contains_key(&id),
             "Duplicate transaction id"
@@ -71,6 +73,7 @@ impl ClientData {
     }
 
     pub fn dispute(&mut self, id: TransactionId) -> Result<()> {
+        ensure!(!self.locked, "Account is locked");
         ensure!(
             !self.in_dispute.contains(&id),
             "Transaction is already in dispute"
@@ -98,6 +101,7 @@ impl ClientData {
     }
 
     pub fn resolve(&mut self, id: TransactionId) -> Result<()> {
+        ensure!(!self.locked, "Account is locked");
         ensure!(
             self.in_dispute.contains(&id),
             "Transaction is not in dispute"
@@ -123,6 +127,7 @@ impl ClientData {
     }
 
     pub fn chargeback(&mut self, id: TransactionId) -> Result<()> {
+        ensure!(!self.locked, "Account is locked");
         ensure!(
             self.in_dispute.contains(&id),
             "Transaction is not in dispute"
@@ -135,6 +140,7 @@ impl ClientData {
 
         self.held -= *amount;
         self.total -= *amount;
+        self.locked = true;
 
         self.in_dispute.remove(&id); // Not in dispute anymore
         self.reverted.insert(id); // Prevent transaction to be reverted more than once

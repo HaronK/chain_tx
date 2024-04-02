@@ -59,13 +59,79 @@ impl Engine {
 
 #[cfg(test)]
 mod tests {
-    use std::collections::HashMap;
 
-    use crate::transaction::{Amount, ClientId};
+    use crate::transaction::Amount;
 
     use super::Engine;
 
-    fn do_test(csv: &str, expected_clients: &HashMap<ClientId, (Amount, Amount, Amount, bool)>) {
+    #[test]
+    fn test_deposit() {
+        do_test("deposit, 1, 1, 1.0", &[(1, 1.0, 0.0, 1.0, false)]);
+    }
+
+    #[test]
+    fn test_withdraw() {
+        do_test(
+            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5",
+            &[(1, 0.5, 0.0, 0.5, false)],
+        );
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_withdraw_too_much_fail() {
+        do_test("deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 1.5", &[]);
+    }
+
+    #[test]
+    fn test_dispute_deposit() {
+        do_test(
+            "deposit, 1, 1, 1.0\ndispute, 1, 1, 0.0",
+            &[(1, 0.0, 1.0, 1.0, false)],
+        );
+    }
+
+    #[test]
+    fn test_resolve_deposit() {
+        do_test(
+            "deposit, 1, 1, 1.0\ndispute, 1, 1, 0.0\nresolve, 1, 1, 0.0",
+            &[(1, 1.0, 0.0, 1.0, false)],
+        );
+    }
+
+    #[test]
+    fn test_chargeback_deposit() {
+        do_test(
+            "deposit, 1, 1, 1.0\ndispute, 1, 1, 0.0\nchargeback, 1, 1, 0.0",
+            &[(1, 0.0, 0.0, 0.0, true)],
+        );
+    }
+
+    #[test]
+    fn test_dispute_withdraw() {
+        do_test(
+            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5\ndispute, 1, 2, 0.0",
+            &[(1, 1.0, -0.5, 0.5, false)],
+        );
+    }
+
+    #[test]
+    fn test_resolve_withdraw() {
+        do_test(
+            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5\ndispute, 1, 2, 0.0\nresolve, 1, 2, 0.0",
+            &[(1, 0.5, 0.0, 0.5, false)],
+        );
+    }
+
+    #[test]
+    fn test_chargeback_withdraw() {
+        do_test(
+            "deposit, 1, 1, 1.0\nwithdrawal, 1, 2, 0.5\ndispute, 1, 2, 0.0\nchargeback, 1, 2, 0.0",
+            &[(1, 1.0, 0.0, 1.0, true)],
+        );
+    }
+
+    fn do_test(csv: &str, expected: &[(u16, Amount, Amount, Amount, bool)]) {
         let csv_string = "type, client, tx, amount\n".to_string() + csv;
         let mut engine = Engine::default();
 
@@ -74,16 +140,16 @@ mod tests {
             .expect("Cannot apply transaction");
 
         assert_eq!(
-            expected_clients.len(),
+            expected.len(),
             engine.clients.len(),
             "Unexpected number of clients"
         );
 
-        for (id, (available, held, total, locked)) in expected_clients {
+        for (client_id, available, held, total, locked) in expected {
             let client_data = engine
                 .clients
-                .get(&id)
-                .expect(&format!("Unknown client: {}", **id));
+                .get(&(*client_id).into())
+                .expect(&format!("Unknown client: {client_id}"));
 
             assert_eq!(
                 *available,
@@ -94,13 +160,5 @@ mod tests {
             assert_eq!(*total, client_data.total(), "Wrong total amount");
             assert_eq!(*locked, client_data.is_locked(), "Wrong locked flag");
         }
-    }
-
-    #[test]
-    fn test_deposit() {
-        let mut expected_clients = HashMap::new();
-        expected_clients.insert(1.into(), (1.0, 0.0, 1.0, false));
-
-        do_test("deposit, 1, 1, 1.0\n", &expected_clients);
     }
 }
