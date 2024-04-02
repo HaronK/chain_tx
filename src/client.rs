@@ -4,7 +4,7 @@ use anyhow::{ensure, Result};
 
 use crate::transaction::{Amount, TransactionId};
 
-#[derive(Default)]
+#[derive(Debug, Default, PartialEq)]
 pub struct ClientData {
     available: Amount,
 

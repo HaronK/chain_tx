@@ -7,13 +7,10 @@ pub struct Transaction {
     #[serde(rename = "type")]
     pub ty: TransactionType,
 
-    #[serde(flatten)]
     pub client: ClientId,
 
-    #[serde(flatten)]
     pub tx: TransactionId,
 
-    #[serde(flatten)]
     pub amount: Amount,
 }
 
