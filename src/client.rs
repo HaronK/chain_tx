@@ -121,7 +121,8 @@ impl ClientData {
 
         // Transaction dispute resolved
         self.in_dispute.remove(&id); // Not in dispute anymore
-                                     // TODO: remove this line if transaction can be disputed more than once
+
+        // TODO: remove this line if transaction can be disputed more than once
         self.disputed.insert(id); // Prevent transaction to be disputed more than once
 
         Ok(())
