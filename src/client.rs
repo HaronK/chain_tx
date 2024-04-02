@@ -84,7 +84,7 @@ impl ClientData {
         );
 
         let Some(amount) = self.transactions.get(&id) else {
-            eprintln!("Unknown transaction to dispute");
+            // Unknown transaction to dispute
             return Ok(());
         };
         ensure!(

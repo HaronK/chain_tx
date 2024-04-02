@@ -21,21 +21,27 @@ impl Engine {
                 tx.map_err(|err| anyhow!("Cannot read transaction. Error: {err}"))?;
             ensure!(tx.amount >= 0.0, "Negative amount is not allowed");
 
-            let client = if tx.ty == TransactionType::Deposit {
-                self.clients.entry(tx.client).or_default()
-            } else {
-                self.clients
-                    .get_mut(&tx.client)
-                    .ok_or_else(|| anyhow!("Unknown client: {}", *tx.client))?
-            };
+            self.apply_transaction(&tx)?;
+        }
 
-            match tx.ty {
-                TransactionType::Deposit => client.deposit(tx.tx, tx.amount)?,
-                TransactionType::Withdrawal => client.withdraw(tx.tx, tx.amount)?,
-                TransactionType::Dispute => client.dispute(tx.tx)?,
-                TransactionType::Resolve => client.resolve(tx.tx)?,
-                TransactionType::Chargeback => client.chargeback(tx.tx)?,
-            }
+        Ok(())
+    }
+
+    fn apply_transaction(&mut self, tx: &Transaction) -> Result<()> {
+        let client = if tx.ty == TransactionType::Deposit {
+            self.clients.entry(tx.client).or_default()
+        } else {
+            self.clients
+                .get_mut(&tx.client)
+                .ok_or_else(|| anyhow!("Unknown client: {}", *tx.client))?
+        };
+
+        match tx.ty {
+            TransactionType::Deposit => client.deposit(tx.tx, tx.amount)?,
+            TransactionType::Withdrawal => client.withdraw(tx.tx, tx.amount)?,
+            TransactionType::Dispute => client.dispute(tx.tx)?,
+            TransactionType::Resolve => client.resolve(tx.tx)?,
+            TransactionType::Chargeback => client.chargeback(tx.tx)?,
         }
 
         Ok(())
@@ -131,6 +137,22 @@ mod tests {
         do_test(
             include_str!("../test_data/chargeback_withdrawal.csv"),
             &[(1, 1.0, 0.0, 1.0, true)],
+        );
+    }
+
+    #[test]
+    fn test_multi_dispute() {
+        do_test(
+            include_str!("../test_data/multi_dispute.csv"),
+            &[(1, 17.0, 7.0, 24.0, true)],
+        );
+    }
+
+    #[test]
+    fn test_multi_client() {
+        do_test(
+            include_str!("../test_data/multi_client.csv"),
+            &[(1, 11.0, 0.0, 11.0, true), (2, 12.0, 7.0, 19.0, false)],
         );
     }
 
