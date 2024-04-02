@@ -46,7 +46,7 @@ impl Engine {
 
         self.clients.iter().for_each(|(id, data)| {
             println!(
-                "{}, {}, {}, {}, {}",
+                "{}, {:.4}, {:.4}, {:.4}, {}",
                 **id,
                 data.available(),
                 data.held(),
@@ -66,15 +66,16 @@ mod tests {
 
     #[test]
     fn test_deposit() {
-        do_test("deposit, 1, 1, 1.0", &[(1, 1.0, 0.0, 1.0, false)]);
+        do_test(
+            include_str!("../test_data/deposit.csv"),
+            &[(1, 1.0, 0.0, 1.0, false)],
+        );
     }
 
     #[test]
     fn test_withdraw() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                withdrawal, 1, 2, 0.5"##,
+            include_str!("../test_data/withdraw.csv"),
             &[(1, 0.5, 0.0, 0.5, false)],
         );
     }
@@ -82,20 +83,13 @@ mod tests {
     #[test]
     #[should_panic]
     fn test_withdraw_too_much_fail() {
-        do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                withdrawal, 1, 2, 1.5"##,
-            &[],
-        );
+        do_test(include_str!("../test_data/withdraw_too_much_fail.csv"), &[]);
     }
 
     #[test]
     fn test_dispute_deposit() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                dispute, 1, 1, 0.0"##,
+            include_str!("../test_data/dispute_deposit.csv"),
             &[(1, 0.0, 1.0, 1.0, false)],
         );
     }
@@ -103,10 +97,7 @@ mod tests {
     #[test]
     fn test_resolve_deposit() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                dispute, 1, 1, 0.0
-                resolve, 1, 1, 0.0"##,
+            include_str!("../test_data/resolve_deposit.csv"),
             &[(1, 1.0, 0.0, 1.0, false)],
         );
     }
@@ -114,55 +105,40 @@ mod tests {
     #[test]
     fn test_chargeback_deposit() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                dispute, 1, 1, 0.0
-                chargeback, 1, 1, 0.0"##,
+            include_str!("../test_data/chargeback_deposit.csv"),
             &[(1, 0.0, 0.0, 0.0, true)],
         );
     }
 
     #[test]
-    fn test_dispute_withdraw() {
+    fn test_dispute_withdrawal() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                withdrawal, 1, 2, 0.5
-                dispute, 1, 2, 0.0"##,
+            include_str!("../test_data/dispute_withdrawal.csv"),
             &[(1, 1.0, -0.5, 0.5, false)],
         );
     }
 
     #[test]
-    fn test_resolve_withdraw() {
+    fn test_resolve_withdrawal() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                withdrawal, 1, 2, 0.5
-                dispute, 1, 2, 0.0
-                resolve, 1, 2, 0.0"##,
+            include_str!("../test_data/resolve_withdrawal.csv"),
             &[(1, 0.5, 0.0, 0.5, false)],
         );
     }
 
     #[test]
-    fn test_chargeback_withdraw() {
+    fn test_chargeback_withdrawal() {
         do_test(
-            r##"
-                deposit, 1, 1, 1.0
-                withdrawal, 1, 2, 0.5
-                dispute, 1, 2, 0.0
-                chargeback, 1, 2, 0.0"##,
+            include_str!("../test_data/chargeback_withdrawal.csv"),
             &[(1, 1.0, 0.0, 1.0, true)],
         );
     }
 
     fn do_test(csv: &str, expected: &[(u16, Amount, Amount, Amount, bool)]) {
-        let csv_string = "type, client, tx, amount\n".to_string() + csv;
         let mut engine = Engine::default();
 
         engine
-            .apply_transactions(csv_string.as_bytes())
+            .apply_transactions(csv.as_bytes())
             .expect("Cannot apply transaction");
 
         assert_eq!(

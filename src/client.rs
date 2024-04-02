@@ -18,7 +18,7 @@ pub struct ClientData {
 
     in_dispute: HashSet<TransactionId>,
 
-    reverted: HashSet<TransactionId>,
+    disputed: HashSet<TransactionId>,
 }
 
 impl ClientData {
@@ -79,7 +79,7 @@ impl ClientData {
             "Transaction is already in dispute"
         );
         ensure!(
-            !self.reverted.contains(&id),
+            !self.disputed.contains(&id),
             "Transaction was already reversed"
         );
 
@@ -119,9 +119,10 @@ impl ClientData {
         self.held -= *amount;
         self.available += *amount;
 
-        // Transaction dispute cancelled and can be disputed again later.
-        // TODO: put transaction into the reverted list if it cannot be disputed more than once.
-        self.in_dispute.remove(&id);
+        // Transaction dispute resolved
+        self.in_dispute.remove(&id); // Not in dispute anymore
+                                     // TODO: remove this line if transaction can be disputed more than once
+        self.disputed.insert(id); // Prevent transaction to be disputed more than once
 
         Ok(())
     }
@@ -142,8 +143,9 @@ impl ClientData {
         self.total -= *amount;
         self.locked = true;
 
+        // Transaction dispute charged back
         self.in_dispute.remove(&id); // Not in dispute anymore
-        self.reverted.insert(id); // Prevent transaction to be reverted more than once
+        self.disputed.insert(id); // Prevent transaction to be disputed more than once
 
         Ok(())
     }
