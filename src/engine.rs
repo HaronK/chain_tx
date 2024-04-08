@@ -21,8 +21,8 @@ impl Engine {
                 tx.map_err(|err| anyhow!("Cannot read transaction. Error: {err}"))?;
             ensure!(tx.amount >= 0.0, "Negative amount is not allowed");
 
-            if let Err(err) = self.apply_transaction(&tx) {
-                eprintln!("Error: {err}");
+            if let Err(_err) = self.apply_transaction(&tx) {
+                // eprintln!("Error: {err}");
             }
         }
 
