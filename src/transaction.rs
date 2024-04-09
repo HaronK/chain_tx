@@ -1,10 +1,9 @@
 use std::ops::Deref;
 
-use serde::Deserialize;
+use anyhow::{anyhow, bail, ensure, Result};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug)]
 pub struct Transaction {
-    #[serde(rename = "type")]
     pub ty: TransactionType,
 
     pub client: ClientId,
@@ -14,8 +13,40 @@ pub struct Transaction {
     pub amount: Amount,
 }
 
-#[derive(Debug, Deserialize, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+impl Transaction {
+    pub fn from_fields(fields: &[&str]) -> Result<Self> {
+        ensure!(
+            fields.len() == 3 || fields.len() == 4,
+            "Not enough fields in a record"
+        );
+
+        let ty = TransactionType::from_str(fields[0])?;
+        let client = fields[1]
+            .parse::<u16>()
+            .map_err(|err| anyhow!("Cannot parse client id: {}. Error: {err}", fields[1]))?
+            .into();
+        let tx = fields[2]
+            .parse::<u32>()
+            .map_err(|err| anyhow!("Cannot parse transaction id: {}. Error: {err}", fields[2]))?
+            .into();
+        let amount = if fields.len() > 3 {
+            fields[3]
+                .parse::<f32>()
+                .map_err(|err| anyhow!("Cannot parse amount: {}. Error: {err}", fields[3]))?
+        } else {
+            0.0
+        };
+
+        Ok(Self {
+            ty,
+            client,
+            tx,
+            amount,
+        })
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub enum TransactionType {
     Deposit,
     Withdrawal,
@@ -24,7 +55,22 @@ pub enum TransactionType {
     Chargeback,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
+impl TransactionType {
+    fn from_str(s: &str) -> Result<Self> {
+        let ty = match s {
+            "deposit" => Self::Deposit,
+            "withdrawal" => Self::Withdrawal,
+            "dispute" => Self::Dispute,
+            "resolve" => Self::Resolve,
+            "chargeback" => Self::Chargeback,
+            _ => bail!("Unsupported transaction type: {s}"),
+        };
+
+        Ok(ty)
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ClientId(u16);
 
 impl From<u16> for ClientId {
@@ -41,7 +87,7 @@ impl Deref for ClientId {
     }
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TransactionId(u32);
 
 impl From<u32> for TransactionId {

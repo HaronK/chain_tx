@@ -14,11 +14,13 @@ impl Engine {
     pub fn apply_transactions<R: std::io::Read>(&mut self, rdr: R) -> Result<()> {
         let mut rdr = csv::ReaderBuilder::new()
             .trim(csv::Trim::All)
+            .flexible(true)
             .from_reader(rdr);
 
-        for tx in rdr.deserialize() {
-            let tx: Transaction =
-                tx.map_err(|err| anyhow!("Cannot read transaction. Error: {err}"))?;
+        for rec_res in rdr.records() {
+            let rec = rec_res.map_err(|err| anyhow!("Cannot read transaction. Error: {err}"))?;
+            let fields: Vec<_> = rec.iter().collect();
+            let tx = Transaction::from_fields(&fields)?;
             ensure!(tx.amount >= 0.0, "Negative amount is not allowed");
 
             if let Err(_err) = self.apply_transaction(&tx) {
